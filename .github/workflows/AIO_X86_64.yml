@@ -1,0 +1,179 @@
+#=================================================
+# Description: Build OpenWrt using GitHub Actions
+#
+# Lisence: MIT
+#
+# Author: Lunseil
+#=================================================
+
+name: 编译X86_64
+
+on:
+  #release:
+  #  types: [published]
+
+  #push:
+  #  branches: 
+  #    - main
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+
+env: 
+  TZ: Asia/Shangha
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: 初始化环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        set +e
+        docker rmi `docker images -q`
+        echo "Deleting files, please wait ..."
+        sudo rm -rf \
+          /usr/share/dotnet \
+          /etc/mysql \
+          /etc/php
+        sudo -E apt-get -y purge \
+          azure-cli \
+          ghc* \
+          zulu* \
+          hhvm \
+          llvm* \
+          firefox \
+          google* \
+          dotnet* \
+          powershell \
+          openjdk* \
+          mysql* \
+          php*
+        sudo -E apt-get update
+        sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev patch python3 python2.7 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex node-uglify git gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx-ucl libelf-dev autoconf automake libtool autopoint device-tree-compiler g++-multilib antlr3 gperf wget curl swig rsync
+        sudo -E apt-get -y autoremove --purge
+        sudo -E apt-get clean
+        
+    - name: 下载Lede源码
+      env: 
+        REPO_URL: https://github.com/coolsnowwolf/lede
+        REPO_BRANCH: master
+      run: |
+        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+        cd openwrt
+        echo "src-git ssrp https://github.com/fw876/helloworld.git" >> ./feeds.conf.default
+        
+    - name: 升级 & 安装 feeds
+      working-directory: ./openwrt
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        ./scripts/feeds install -a
+        
+    - name: 导入第三方插件
+      working-directory: ./openwrt
+      run: |
+        git clone https://github.com/xiaorouji/openwrt-passwall.git package/openwrt-passwall
+        
+    - name: 关机键
+      working-directory: ./openwrt
+      run: |
+        git clone https://github.com/esirplayground/luci-app-poweroff.git package/poweroff
+  
+    - name: netdata汉化
+      working-directory: ./openwrt
+      run: |
+        cd package/lean
+        rm -rf luci-app-netdata
+        git clone https://github.com/sirpdboy/luci-app-netdata.git
+    
+    #需要网易云node版本
+    - name: 京东签到
+      working-directory: ./openwrt
+      run: |
+        cd package/lean
+        rm -rf luci-app-jd-dailybonus
+        git clone https://github.com/jerrykuku/luci-app-jd-dailybonus.git  
+   
+    - name: argon主题配置
+      working-directory: ./openwrt
+      run: |
+        git clone https://github.com/jerrykuku/luci-app-argon-config.git package/argon-config
+   
+    - name: argon主题
+      working-directory: ./openwrt
+      run: |
+        cd package/lean
+        rm -rf luci-theme-argon
+        git clone -b revert-271-18.06_bing https://github.com/jerrykuku/luci-theme-argon.git
+        
+    - name: 配置自定义
+      env:
+        CONFIG_FILE: 'x86_64.config'
+      run: |
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x ./customize.sh && ./customize.sh
+        cd openwrt && make defconfig
+        
+    - name: 更换banner
+      working-directory: ./openwrt
+      run: |
+        cd package/base-files/files/etc
+        sudo rm banner
+        wget https://raw.githubusercontent.com/lunseil/AutoBuild-LEDE/master/banner
+        
+    - name: SSH连接
+      uses: P3TERX/ssh2actions@v1.0.0
+      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+      env:
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}     
+        
+    - name: 预下载DL库
+      working-directory: ./openwrt
+      run: |
+        make download -j$(nproc)
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+        
+    - name: 正式编译固件
+      working-directory: ./openwrt
+      run: |
+        echo -e "$(nproc) thread compile."
+        make -j$(nproc) V=s
+        echo "date=$(date "+%y.%m.%d-%H.%M")" >> $GITHUB_ENV
+        
+    - name: 删除冗余文件
+      working-directory: ./openwrt
+      run: |
+        cd bin/targets/*/*
+        rm -rf packages && mkdir packages
+        find -name "*feeds.buildinfo*" | xargs -i mv -f {} packages
+        find -name "*version.buildinfo*" | xargs -i mv -f {} packages
+        find -name "*sha256sums*" | xargs -i mv -f {} packages
+        find -name "*.manifest*" | xargs -i mv -f {} packages
+        find -name "*.bin*" | xargs -i mv -f {} packages
+        find -name "*.vmdk*" | xargs -i mv -f {} packages
+        find -name "*rootfs.img*" | xargs -i mv -f {} packages
+        find -name "*tar.gz*" | xargs -i mv -f {} packages
+        rm -rf packages
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "::set-output name=status::success" 
+        
+    - name : 打包上传
+      uses: actions/upload-artifact@master
+      with:
+        name: OpenWrt_Lean_${{ env.date }}
+        path: openwrt/bin
+        
+
+               
