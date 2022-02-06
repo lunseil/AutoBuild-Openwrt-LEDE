@@ -22,8 +22,7 @@ env:
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
-  DIY_P1_SH: diy-part1.sh
-  DIY_P2_SH: diy-part2.sh
+  DIY_P1_SH: diy.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
   UPLOAD_COWTRANSFER: true
@@ -69,13 +68,11 @@ jobs:
         sudo -E apt-get clean
         
     - name: 下载Lede源码
-      env: 
-        REPO_URL: https://github.com/coolsnowwolf/lede
-        REPO_BRANCH: master
+      working-directory: /workdir
       run: |
-        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
-        cd openwrt
-        echo "src-git ssrp https://github.com/fw876/helloworld.git" >> ./feeds.conf.default
+        df -hT $PWD
+        git clone $REPO_URL -b $REPO_BRANCH openwrt
+        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
         
     - name: 升级 & 安装 feeds
       working-directory: ./openwrt
@@ -87,10 +84,11 @@ jobs:
     - name: 第三方插件>>1
       working-directory: ./openwrt
       run: |
+        git clone https://github.com/fw876/helloworld.git package/ssrp
         git clone https://github.com/xiaorouji/openwrt-passwall.git package/openwrt-passwall
         git clone https://github.com/esirplayground/luci-app-poweroff.git package/poweroff
         git clone https://github.com/jerrykuku/luci-app-argon-config.git package/argon-config
-
+        
     - name: 第三方插件>>2
       working-directory: ./openwrt
       run: |
@@ -101,14 +99,6 @@ jobs:
         git clone https://github.com/jerrykuku/luci-app-jd-dailybonus.git 
         rm -rf luci-theme-argon
         git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git
-
-    - name: 配置自定义
-      env:
-        CONFIG_FILE: 'x86_64.config'
-      run: |
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-        chmod +x ./diy.sh && ./diy.sh
-        cd openwrt && make defconfig
         
     - name: 更换banner
       working-directory: ./openwrt
@@ -116,6 +106,14 @@ jobs:
         cd package/base-files/files/etc
         sudo rm banner
         wget https://raw.githubusercontent.com/lunseil/AutoBuild-LEDE/master/banner
+            
+
+    - name: 配置自定义
+      run: |
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $DIY_P1_SH
+        cd openwrt
+        $GITHUB_WORKSPACE/$DIY_P1_SH
         
     - name: SSH连接
       uses: P3TERX/ssh2actions@v1.0.0
