@@ -108,7 +108,7 @@ jobs:
         wget https://raw.githubusercontent.com/lunseil/AutoBuild-LEDE/master/banner
             
 
-    - name: 配置自定义
+    - name: 自定义config
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $DIY_P1_SH
