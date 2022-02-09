@@ -5,7 +5,7 @@
 # Author: Lunseil
 #=================================================
 #1. 修改默认的IP以
-sed -i 's/192.168.1.1/10.10.10.222/g' openwrt/package/base-files/files/bin/config_generate
+sed -i 's/192.168.1.1/10.10.10.1/g' openwrt/package/base-files/files/bin/config_generate
 
 #2. 修改主机名
 #sed -i '/uci commit system/i\uci set system.@system[0].hostname='Soft_Routes'' openwrt/package/lean/default-settings/files/zzz-default-settings
