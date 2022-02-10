@@ -102,18 +102,18 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
         ./scripts/feeds install -a
+     
+    - name: 更换banner
+      run: |
+        cd openwrt/package/base-files/files/etc
+        sudo rm banner
+        wget https://raw.githubusercontent.com/lunseil/AutoBuild-LEDE/master/banner   
 
     - name: 自定义config
       run: |
         [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $DIY_P1_SH
-
-    - name: 更换banner
-      run: |
-        cd openwrt/package/base-files/files/etc
-        sudo rm banner
-        wget https://raw.githubusercontent.com/lunseil/AutoBuild-LEDE/master/banner
             
     - name: SSH连接
       uses: P3TERX/ssh2actions@v1.0.0
