@@ -84,7 +84,7 @@ jobs:
         git clone https://github.com/xiaorouji/openwrt-passwall.git package/openwrt-passwall
         git clone https://github.com/esirplayground/luci-app-poweroff.git package/poweroff
         git clone https://github.com/jerrykuku/luci-app-argon-config.git package/argon-config
-        git clone https://github.com/jerrykuku/luci-app-ttnode.git' package/ttnode
+        git clone https://github.com/jerrykuku/luci-app-ttnode.git package/ttnode
     - name: 第三方插件>>2
       working-directory: ./openwrt
       run: |
