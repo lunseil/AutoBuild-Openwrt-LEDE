@@ -17,6 +17,11 @@
 
 特此感谢P3TERX的出色工作：https://github.com/esirplayground/AutoBuild-OpenWrt
 
+此项目运行编译为手动运行,点击Action > 编译X86_64_lede > Run workflow 
+ 
+    直接编译点击绿色Run workflow，需要在线编译修改flase为true
+    
+    需要SSH在线编译需要自行开启SSH！！！不会请搜索教程！！！
 
 以下是此项目自动编译后展示：
 ![网页捕获_8-2-2022_112318_10 10 10 1](https://user-images.githubusercontent.com/19170650/152912488-38b54e1c-15d5-47b1-a4a3-0eab2c5b0a16.jpeg)
