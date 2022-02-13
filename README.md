@@ -17,9 +17,9 @@
 
 特此感谢P3TERX的出色工作：https://github.com/esirplayground/AutoBuild-OpenWrt
 
-此项目运行编译为手动运行,点击Action > 编译X86_64_lede > Run workflow 
+此项目运行编译为手动运行,点击Actions > 编译X86_64_lede > Run workflow 
  
-    直接编译点击绿色Run workflow，需要在线编译修改flase为true
+    直接编译点击绿色Run workflow，需要在线编译修改false为true
     
     需要SSH在线编译需要自行开启SSH！！！不会请搜索教程！！！
 
