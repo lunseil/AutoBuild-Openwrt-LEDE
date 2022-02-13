@@ -76,24 +76,11 @@ jobs:
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
    
-    - name: 第三方插件>>1
+    - name: 第三方插件
       working-directory: ./openwrt
       run: |
         git clone https://github.com/fw876/helloworld.git package/ssrp
-        git clone https://github.com/xiaorouji/openwrt-passwall.git package/openwrt-passwall
-        git clone https://github.com/esirplayground/luci-app-poweroff.git package/poweroff
-        git clone https://github.com/jerrykuku/luci-app-argon-config.git package/argon-config
-        git clone https://github.com/jerrykuku/luci-app-ttnode.git package/ttnode
-    - name: 第三方插件>>2
-      working-directory: ./openwrt
-      run: |
-        cd package/lean
-        rm -rf luci-app-netdata
-        git clone https://github.com/sirpdboy/luci-app-netdata.git
-        rm -rf luci-app-jd-dailybonus
-        git clone https://github.com/jerrykuku/luci-app-jd-dailybonus.git 
-        rm -rf luci-theme-argon
-        git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git
+        git clone https://github.com/kenzok8/small-package package/small-package
         
     - name: 升级 & 安装 feeds
       working-directory: ./openwrt
